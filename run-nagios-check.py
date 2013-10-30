@@ -2,13 +2,13 @@ from time import sleep
 import RPi.GPIO as GPIO
 
 # setup some names references to the LED's and buttons
-# ldn red     = pin 13
-# ldn amber   = pin 12
-# ldn green   = pin 7
+# site1 red     = pin 13
+# site1 amber   = pin 12
+# site1 green   = pin 7
 
-# peer1 red   = pin 18
-# peer1 amber = pin 16
-# peer1 green = pin 15
+# site2 red   = pin 18
+# site2 amber = pin 16
+# site2 green = pin 15
 
 GPIO.setmode(GPIO.BCM)
 
@@ -28,18 +28,18 @@ for n in leds
   GPIO.setup(n, GPIO.OUT)
   GPIO.output(n, False)
    
-with open("/home/user/pi-nagios-lights/ldn1/redalertcount") as f:
+with open("/home/user/pi-nagios-lights/site1/redalertcount") as f:
     data = f.read()
     if f > 0
       while RedAlert:
       GPIO.output(13,GPIO.HIGH)
       
-with open("/home/user/pi-nagios-lights/ldn1/orangealertcount") as f:
+with open("/home/user/pi-nagios-lights/site1/orangealertcount") as f:
     data = f.read()
     if f > 0
       GPIO.output(12,GPIO.HIGH)
       
-with open("/home/user/pi-nagios-lights/ldn1/greenalertcount") as f:
+with open("/home/user/pi-nagios-lights/site1/greenalertcount") as f:
     data = f.read()
     if f > 0
       while GreenAlert:
