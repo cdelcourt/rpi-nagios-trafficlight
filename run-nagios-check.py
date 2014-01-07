@@ -1,56 +1,94 @@
+#!/usr/bin/python3
+
+# Some references to the LED's
+
+# Row 1 Red		= pin 13
+# Row 1 Amber		= pin 12
+# Row 1 Green		= pin 7
+
+# Row 2 Red		= pin 18
+# Row 2 Amber		= pin 16
+# Row 2 Green		= pin 15
+
+import urllib.request
+from urllib.error import  URLError
+from bs4 import BeautifulSoup as BS
 from time import sleep
 import RPi.GPIO as GPIO
 
-# setup some names references to the LED's and buttons
-# site1 red     = pin 13
-# site1 amber   = pin 12
-# site1 green   = pin 7
+GPIO.setmode(GPIO.BOARD) #Set the board mode. BCM Pinouts are different, hence BOARD
+	
+leds = [13, 12, 7, 18, 16, 15] #Set up the GPIO pins to be used
 
-# site2 red   = pin 18
-# site2 amber = pin 16
-# site2 green = pin 15
+for n in leds: #Reset all LEDs
+	GPIO.setup(n, GPIO.OUT)
+	GPIO.output(n, False)
 
-GPIO.setmode(GPIO.BCM)
+alert_url = "https://nagiosserver/alerts.html" 
 
-#Set up the GPIO pins to be used
+def checkAlerts():
+	try:
 
-leds = [13, 12, 7, 18, 16, 15]
-button = 26
+		with urllib.request.urlopen(alert_url, timeout = 3) as url:
+			pageData = BS(url.read())
+			red = len(pageData.findAll("tr", { "class" : "red" }))
+			orange = len(pageData.findAll("tr", { "class" : "orange" }))
+			green = len(pageData.findAll("tr", { "class" : "green" }))
+			ippatrol = len(pageData.findAll("tr", { "class" : "ippatrol" }))
+			print(red,orange,green,ippatrol)
 
-#Buzzer setup
-GPIO.setup(22,GPIO.OUT)
+	except URLError as e:
+		if hasattr(e, 'reason'):
+			print('We failed to reach a server.')
+			print('Reason: ', e.reason)
+			for n in leds:
+				GPIO.output(n,GPIO.HIGH)
+				sleep(1)
+		elif hasattr(e, 'code'):
+			print('The server couldn\'t fulfill the request.')
+			print('Error code: ', e.code)
+			for n in leds:
+				GPIO.output(n,GPIO.HIGH)
+				sleep(1)
+	else:
 
-# GPIO 23 set up as input. It is pulled up to stop false signals  
-GPIO.setup(23, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+		for n in leds:
+			GPIO.output(n, False)
+ 
+		if ippatrol > 0:  #If an IPPatrol alert comes up, that means a site is down, so flash all lights once
+			for n in leds:
+				GPIO.output(n,GPIO.HIGH)
+				sleep(0.1)
+				GPIO.output(n,GPIO.LOW)
+				sleep(0.1)
+				GPIO.output(n,GPIO.HIGH)
+				sleep(0.1)
+				GPIO.output(n,GPIO.LOW)
+				GPIO.output(18,GPIO.HIGH) #Keep this one on after all lights have been flashed
 
-#LED setup
-for n in leds
-  GPIO.setup(n, GPIO.OUT)
-  GPIO.output(n, False)
-   
-with open("/home/user/pi-nagios-lights/site1/redalertcount") as f:
-    data = f.read()
-    if f > 0
-      while RedAlert:
-      GPIO.output(13,GPIO.HIGH)
-      
-with open("/home/user/pi-nagios-lights/site1/orangealertcount") as f:
-    data = f.read()
-    if f > 0
-      GPIO.output(12,GPIO.HIGH)
-      
-with open("/home/user/pi-nagios-lights/site1/greenalertcount") as f:
-    data = f.read()
-    if f > 0
-      while GreenAlert:
-        GPIO.output(7,GPIO.HIGH)
-        sleep(2)  
-        GPIO.output(7,GPIO.LOW)
+		if red > 0:  #If something is wrong, light up the red light
+			GPIO.output(13,GPIO.HIGH)
 
-try:  
-    GPIO.wait_for_edge(26, GPIO.FALLING)  
-    GPIO.output(22, GPIO.LOW)
+		if red > 5:  #If something is *really* wrong, flash the red light to grab my attention!
+			GPIO.output(13,GPIO.LOW)
+			sleep(0.2)
+			GPIO.output(13,GPIO.HIGH)
+			sleep(0.2)			
+			GPIO.output(13,GPIO.LOW)
+			sleep(0.2)
+			GPIO.output(13,GPIO.HIGH)
 
-except KeyboardInterrupt:
-  GPIO.cleanup() #clean up GPIO on CTRL-C exit
-GPIO.cleanup()   #clean up GPIO on normal exit
+		if orange > 0:
+			GPIO.output(12,GPIO.HIGH)
+
+		if green > 0:
+			GPIO.output(7,GPIO.HIGH)
+
+count = 0
+while True:
+	count += 1
+	sleep (5)
+	checkAlerts()
+
+#except KeyboardInterrupt:
+#	GPIO.cleanup()
