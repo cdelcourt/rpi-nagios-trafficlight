@@ -30,7 +30,7 @@ def checkAlerts():
 	try:
 
 		with urllib.request.urlopen(alert_url, timeout = 3) as url:
-			pageData = BS(url.read())
+			pageData = BS(url.read()) #Process with BeautifulSoup to work with the data
 			red = len(pageData.findAll("tr", { "class" : "red" }))
 			orange = len(pageData.findAll("tr", { "class" : "orange" }))
 			green = len(pageData.findAll("tr", { "class" : "green" }))
