@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-#rpi-nagiod-trafficlight - Christophe Delcourt <cd.delcourt@gmail.com>
+#rpi-nagios-trafficlight - Christophe Delcourt <cd.delcourt@gmail.com>
 
 # Some references to the LED's
 
